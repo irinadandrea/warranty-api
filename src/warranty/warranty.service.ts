@@ -46,6 +46,35 @@ export class WarrantyService {
     await this.prisma.warranty.delete({ where: { id } });
   }
 
+  async cleanupExpired(userId: string) {
+    const now = new Date();
+
+    const deletedCount = await this.prisma.$transaction(async (transaction) => {
+      const expiredWarranties = await transaction.warranty.findMany({
+        where: {
+          userId,
+          expiresAt: { lt: now },
+        },
+        select: { id: true },
+      });
+
+      if (expiredWarranties.length === 0) {
+        return 0;
+      }
+
+      const result = await transaction.warranty.deleteMany({
+        where: {
+          userId,
+          id: { in: expiredWarranties.map(({ id }) => id) },
+        },
+      });
+
+      return result.count;
+    });
+
+    return { deletedCount };
+  }
+
   private async findOwnedWarranty(userId: string, id: string) {
     const warranty = await this.prisma.warranty.findFirst({
       where: { id, userId },

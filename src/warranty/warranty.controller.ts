@@ -55,6 +55,11 @@ export class WarrantyController {
     );
   }
 
+  @Delete('expired/cleanup')
+  cleanupExpired(@Req() request: AuthenticatedRequest) {
+    return this.warrantyService.cleanupExpired(request.user.sub);
+  }
+
   @Delete(':id')
   remove(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.warrantyService.remove(request.user.sub, id);
